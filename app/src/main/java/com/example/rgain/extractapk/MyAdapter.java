@@ -2,8 +2,10 @@ package com.example.rgain.extractapk;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.support.v7.widget.CardView;
-import android.support.v7.widget.RecyclerView;
+
+import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
+import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,30 +24,30 @@ import java.util.List;
 public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
 
     private List<listItemModel> packages;
-    private Context context;
     private OnItemClickListener mListener;
 
     public interface OnItemClickListener {
         void onItemClick(int position, String model);
     }
 
-    public void setOnItemClickListener(OnItemClickListener listener) {
+    void setOnItemClickListener(OnItemClickListener listener) {
         mListener = listener;
     }
 
-    public MyAdapter(List<listItemModel> packages, Context context, ArrayList<listItemModel> apksModel) {
+    MyAdapter(List<listItemModel> packages, Context context, ArrayList<listItemModel> apksModel) {
         this.packages = packages;
-        this.context = context;
+        Context context1 = context;
     }
 
+    @NonNull
     @Override
-    public MyAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public MyAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_model, parent, false);
         return new ViewHolder(v, mListener);
     }
 
     @Override
-    public void onBindViewHolder(final MyAdapter.ViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull final MyAdapter.ViewHolder holder, final int position) {
         final listItemModel model = packages.get(position);
         final listItemModel listItem = packages.get(position);
         holder.ocl = mListener;
@@ -53,7 +55,6 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         holder.txtPackageName.setText(listItem.getPname());
         holder.txtSize.setText(listItem.getVersionName());
         holder.imgApp.setImageDrawable(listItem.getIcon());
-
 
 
         holder.cardView.setOnClickListener(new View.OnClickListener() {
@@ -64,18 +65,14 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         });
     }
 
-    @Override
-    public int getItemCount() {
-        return packages.size();
-    }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView imgApp;
         TextView txtName, txtPackageName, txtSize;
         CardView cardView;
         OnItemClickListener ocl;
 
-        public ViewHolder(final View itemView, final OnItemClickListener listener) {
+        ViewHolder(final View itemView, final OnItemClickListener listener) {
             super(itemView);
 
             cardView = itemView.findViewById(R.id.cardItem);
@@ -99,4 +96,16 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
 
         }
     }
+
+    @Override
+    public int getItemCount() {
+        return packages.size();
+    }
+
+
+    void filterList(ArrayList<listItemModel> filteredList){
+        packages = filteredList;
+        notifyDataSetChanged();
+    }
+
 }

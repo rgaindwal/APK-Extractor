@@ -1,7 +1,7 @@
 package com.example.rgain.extractapk;
 
 import android.graphics.drawable.Drawable;
-import android.support.v7.widget.CardView;
+import androidx.cardview.widget.CardView;
 import android.widget.LinearLayout;
 
 /**

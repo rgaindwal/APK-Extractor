@@ -1,7 +1,7 @@
 package com.example.rgain.extractapk;
 
 import android.Manifest;
-import android.content.Context;
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -10,31 +10,28 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Environment;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.os.Bundle;
-import android.support.v7.widget.CardView;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+
+import androidx.cardview.widget.CardView;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.ImageButton;
 import android.widget.Toast;
-import android.widget.Toolbar;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,23 +43,22 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 public class MainActivity extends AppCompatActivity {
 
     private int STORAGE_PERMISSION_CODE = 1;
 
-    android.support.v7.widget.Toolbar toolbar;
-    private MenuItem mSearchAction;
-    MenuItem mSettings;
-    private boolean isSearchOpened = false;
+    androidx.appcompat.widget.Toolbar toolbar;
+    private boolean isSearchOpened;
     private EditText edtSeach;
+    private ImageButton btnSearch;
 
     RecyclerView recView;
     MyAdapter adapter;
-    List<ApplicationInfo> installedApps;
-    PackageManager pm;
-    List<ApplicationInfo> apps;
+
+    ArrayList<listItemModel> res;
 
 
     @Override
@@ -70,14 +66,57 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         toolbar = findViewById(R.id.toolbar);
-       setSupportActionBar(toolbar);
+        setSupportActionBar(toolbar);
+        isSearchOpened = FALSE;
+
+        edtSeach = findViewById(R.id.editTextSearch);
+        btnSearch = findViewById(R.id.btnSearch);
+        ImageButton btnMore = findViewById(R.id.btnMore);
+
         recView = findViewById(R.id.recView);
         recView.setHasFixedSize(true);
         recView.setLayoutManager(new LinearLayoutManager(this));
 
+
+        btnSearch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!isSearchOpened ){
+                    isSearchOpened = TRUE;
+                    edtSeach.setVisibility(View.VISIBLE);
+                    edtSeach.requestFocus();
+                    btnSearch.setImageResource(R.drawable.ic_baseline_close_24px);
+                }
+
+                else{
+                    isSearchOpened = FALSE;
+                    edtSeach.setVisibility(View.INVISIBLE);
+                    btnSearch.setImageResource(R.drawable.ic_search_black_48px);
+                }
+            }
+        });
+
+        edtSeach.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                filter(editable.toString());
+            }
+        });
+
+
         List<PackageInfo> apps = getPackageManager().getInstalledPackages(0);
 
-        ArrayList<listItemModel> res = new ArrayList<>();
+        res = new ArrayList<>();
         listItemModel newInfo;
 
         for (int i = 0; i < apps.size(); i++) {
@@ -119,6 +158,17 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void filter(String editable){
+        ArrayList<listItemModel> filteredList = new ArrayList<>();
+        for(listItemModel item : res){
+            if(item.getAppname().toLowerCase().contains(editable.toLowerCase())){
+                filteredList.add(item);
+            }
+        }
+
+        adapter.filterList(filteredList);
+    }
+
 
     private void createDialog(int position, String name) {
         final int clickedPosition = position;
@@ -128,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
         final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this, R.style.Theme_AppCompat_DayNight_Dialog_Alert);
         LayoutInflater inflater = this.getLayoutInflater();
 
-        final View dialogView = inflater.inflate(R.layout.dialog, null);
+        @SuppressLint("InflateParams") final View dialogView = inflater.inflate(R.layout.dialog, null);
         dialogBuilder.setView(dialogView);
 
         final CardView extract = dialogView.findViewById(R.id.cardExtract);
@@ -153,16 +203,15 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(MainActivity.this, "Permission Already  Granted", Toast.LENGTH_SHORT).show();
-            requestGranted=1;
+            requestGranted = 1;
         } else {
             requestGranted = requestStoragePermission();
         }
 
-        if(requestGranted==1){
-            int i= extractFileToExternal(clickedPosition,clickedName);
+        if (requestGranted == 1) {
+            int i = extractFileToExternal(clickedPosition, clickedName);
 
-        }
-        else{
+        } else {
             Toast.makeText(MainActivity.this, "No permission", Toast.LENGTH_SHORT).show();
         }
     }
@@ -178,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
-                            granted[0] =1;
+                            granted[0] = 1;
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -191,9 +240,9 @@ public class MainActivity extends AppCompatActivity {
 
         } else {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
-            granted[0] =1;
+            granted[0] = 1;
         }
-        if(granted[0] == 1)
+        if (granted[0] == 1)
             return 1;
         else
             return 0;
@@ -213,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
 
         for (ResolveInfo info : apps) {
             String packageName3 = info.activityInfo.packageName;
-            Log.d("1", "extractFileToExternal: "  + packageName3);
+            Log.d("1", "extractFileToExternal: " + packageName3);
             Log.d("2", "Clicked: " + clickedPackageName);
             if (packageName3.equals(clickedPackageName)) {
                 try {
@@ -245,15 +294,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     private boolean isSystemPackage(PackageInfo packageInfo) {
         return ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if(requestCode == STORAGE_PERMISSION_CODE){
-            if(grantResults.length>0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show();
             else
                 Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show();
